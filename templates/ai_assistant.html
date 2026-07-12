@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ai.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="location.href='/notifications'">🔔<span class="badge">0</span></button>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ session.get('user_name', 'User') }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/assets">💻 Assets</a>
+            <a href="/allocation">📋 Allocation</a>
+            <a href="/booking">📅 Bookings</a>
+            <a href="/maintenance">🔧 Maintenance</a>
+            <a href="/reports">📈 Reports</a>
+            <a href="/digital-twin">🌌 Digital Twin</a>
+            <a href="/ai/assistant" class="active">🧠 AI Assistant</a>
+        </div>
+    </div>
+
+    <main class="main-content full">
+        <div class="ai-assistant-page">
+            <!-- AI Chat -->
+            <div class="ai-chat-main glass">
+                <div class="ai-chat-header">
+                    <div class="ai-status">
+                        <span class="ai-avatar">🤖</span>
+                        <div>
+                            <h3>AssetFlow AI Assistant</h3>
+                            <p class="status online">● Online</p>
+                        </div>
+                    </div>
+                    <button onclick="clearChat()" class="btn-secondary" style="padding: 6px 16px; font-size: 13px;">Clear Chat</button>
+                </div>
+
+                <div class="ai-messages-area" id="aiMessagesArea">
+                    <div class="ai-message ai">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>Hello! I'm your AI assistant for AssetFlow.</p>
+                            <p>You can ask me about:</p>
+                            <ul>
+                                <li>📊 Asset statistics and insights</li>
+                                <li>📋 Allocation and status information</li>
+                                <li>🔧 Maintenance recommendations</li>
+                                <li>📈 Reports and analytics</li>
+                                <li>💡 Suggestions and optimizations</li>
+                            </ul>
+                            <p style="margin-top: 8px; color: var(--text-secondary);">Try asking: "Show me overdue assets" or "What maintenance is pending?"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-input-area">
+                    <textarea id="aiMessageInput" placeholder="Ask me anything about your assets..." rows="2"></textarea>
+                    <button onclick="sendAIMessage()" class="btn-primary">Send</button>
+                </div>
+            </div>
+
+            <!-- AI Suggestions -->
+            <div class="ai-suggestions glass">
+                <h4>💡 Quick Questions</h4>
+                <div class="suggestion-list">
+                    <div class="suggestion-item" onclick="askAI('Show me overdue assets')">
+                        <span>⚠️</span>
+                        <div>
+                            <h5>Overdue Assets</h5>
+                            <p>Show all assets past return date</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('Which department has the most assets?')">
+                        <span>🏢</span>
+                        <div>
+                            <h5>Department Analysis</h5>
+                            <p>Asset distribution by department</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('What maintenance is pending?')">
+                        <span>🔧</span>
+                        <div>
+                            <h5>Maintenance Status</h5>
+                            <p>Pending maintenance requests</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('Recommend asset transfers')">
+                        <span>🔄</span>
+                        <div>
+                            <h5>Asset Recommendations</h5>
+                            <p>Get transfer recommendations</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('Show asset health report')">
+                        <span>💚</span>
+                        <div>
+                            <h5>Health Report</h5>
+                            <p>Overall asset health status</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('What are the most used assets?')">
+                        <span>🏆</span>
+                        <div>
+                            <h5>Usage Analysis</h5>
+                            <p>Most used assets in the company</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('How many assets are available?')">
+                        <span>📊</span>
+                        <div>
+                            <h5>Asset Status</h5>
+                            <p>Current availability status</p>
+                        </div>
+                    </div>
+                    <div class="suggestion-item" onclick="askAI('Help me with asset management')">
+                        <span>💡</span>
+                        <div>
+                            <h5>Get Help</h5>
+                            <p>Learn how to use AssetFlow</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+    <script>
+        // Override sendAIMessage for this page
+        function sendAIMessage() {
+            const input = document.getElementById('aiMessageInput');
+            const message = input.value.trim();
+            if (!message || isProcessing) return;
+            
+            input.value = '';
+            addMessage(message, 'user');
+            
+            showTypingIndicator();
+            isProcessing = true;
+            
+            fetch('/ai/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                removeTypingIndicator();
+                addMessage(data.response, 'ai');
+                isProcessing = false;
+            })
+            .catch(error => {
+                removeTypingIndicator();
+                addMessage('Sorry, I encountered an error. Please try again.', 'ai');
+                isProcessing = false;
+                console.error('AI Error:', error);
+            });
+        }
+
+        function askAI(query) {
+            document.getElementById('aiMessageInput').value = query;
+            sendAIMessage();
+        }
+
+        let isProcessing = false;
+
+        function addMessage(text, sender) {
+            const container = document.getElementById('aiMessagesArea');
+            const div = document.createElement('div');
+            div.className = `ai-message ${sender}`;
+            const avatar = sender === 'ai' ? '🤖' : '👤';
+            const content = text.split('\n').map(p => `<p>${p}</p>`).join('');
+            div.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${content}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const container = document.getElementById('aiMessagesArea');
+            const div = document.createElement('div');
+            div.className = 'ai-message ai';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="typing-indicator"><span></span><span></span><span></span></div>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function clearChat() {
+            const container = document.getElementById('aiMessagesArea');
+            container.innerHTML = `
+                <div class="ai-message ai">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Chat cleared! How can I help you with your assets today? 🚀</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Enter key support
+        document.getElementById('aiMessageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendAIMessage();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Maintenance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="location.href='/notifications'">🔔<span class="badge">0</span></button>
+            <button class="nav-btn" onclick="toggleAI()">🤖</button>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ session.get('user_name', 'User') }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/assets">💻 Assets</a>
+            <a href="/allocation">📋 Allocation</a>
+            <a href="/booking">📅 Bookings</a>
+            <a href="/maintenance" class="active">🔧 Maintenance</a>
+            <a href="/reports">📈 Reports</a>
+            <a href="/digital-twin">🌌 Digital Twin</a>
+            <a href="/ai/assistant">🧠 AI Assistant</a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <section class="page-header">
+            <div>
+                <h1>Maintenance Management</h1>
+                <p>Track and manage asset maintenance requests</p>
+            </div>
+            <button class="btn-primary" onclick="openMaintenanceModal()">🔧 Raise Request</button>
+        </section>
+
+        <!-- Maintenance Stats -->
+        <section class="stats-grid small">
+            <div class="stat-card glass">
+                <h3>Pending</h3>
+                <p class="stat-number" style="color: #FFB300;">{{ pending_maintenance }}</p>
+            </div>
+            <div class="stat-card glass">
+                <h3>In Progress</h3>
+                <p class="stat-number" style="color: #00D4FF;">{{ in_progress }}</p>
+            </div>
+            <div class="stat-card glass">
+                <h3>Completed</h3>
+                <p class="stat-number" style="color: #00E676;">{{ completed_maintenance }}</p>
+            </div>
+        </section>
+
+        <!-- Maintenance List -->
+        <section class="maintenance-list">
+            {% for req in maintenance_requests %}
+            <div class="maintenance-card glass">
+                <div class="maintenance-header">
+                    <h4>#{{ req.asset.tag if req.asset else 'N/A' }} - {{ req.asset.name if req.asset else 'N/A' }}</h4>
+                    <span class="status-badge {{ req.status }}">
+                        {{ req.status }}
+                    </span>
+                </div>
+                <div class="maintenance-details">
+                    <p><strong>Issue:</strong> {{ req.issue }}</p>
+                    <p><strong>Reported By:</strong> {{ req.user.fullname if req.user else 'N/A' }}</p>
+                    <p><strong>Date:</strong> {{ req.created_at.strftime('%b %d, %Y %I:%M %p') if req.created_at else 'N/A' }}</p>
+                    <p><strong>Priority:</strong> 
+                        <span style="color: {% if req.priority == 'Critical' %}#FF1744{% elif req.priority == 'High' %}#FF6B6B{% elif req.priority == 'Medium' %}#FFB300{% else %}#00E676{% endif %};">
+                            {{ req.priority }}
+                        </span>
+                    </p>
+                </div>
+                <div class="maintenance-actions">
+                    <button onclick="viewMaintenance({{ req.id }})">👁️ View</button>
+                    {% if req.status == 'Pending' and session.get('user_role') in ['Admin', 'Manager'] %}
+                    <button onclick="approveMaintenance({{ req.id }})" style="background: rgba(0,230,118,0.15); color: #00E676;">✅ Approve</button>
+                    {% endif %}
+                    {% if req.status == 'In Progress' and session.get('user_role') in ['Admin', 'Manager'] %}
+                    <button onclick="completeMaintenance({{ req.id }})" style="background: rgba(0,212,255,0.15); color: #00D4FF;">✅ Complete</button>
+                    {% endif %}
+                    {% if session.get('user_role') in ['Admin'] %}
+                    <button onclick="deleteMaintenance({{ req.id }})" style="background: rgba(255,23,68,0.15); color: #FF1744;">🗑️ Delete</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                <span style="font-size: 48px; display: block; margin-bottom: 16px;">✅</span>
+                <h3>No Maintenance Requests</h3>
+                <p>All assets are in good condition!</p>
+            </div>
+            {% endfor %}
+        </section>
+    </main>
+
+    <!-- Maintenance Modal -->
+    <div class="modal" id="maintenanceModal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>Raise Maintenance Request</h2>
+                <button onclick="closeMaintenanceModal()">✕</button>
+            </div>
+            <form action="/maintenance/raise" method="POST">
+                <div class="form-group">
+                    <label>Asset <span class="required">*</span></label>
+                    <select name="asset_id" required>
+                        <option value="">Select an asset</option>
+                        {% for asset in assets %}
+                        <option value="{{ asset.id }}">#{{ asset.tag }} - {{ asset.name }} ({{ asset.status }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Issue Description <span class="required">*</span></label>
+                    <textarea name="issue" required placeholder="Describe the issue in detail..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Priority <span class="required">*</span></label>
+                    <select name="priority" required>
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Raise Request</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleAI() {
+            document.querySelector('.ai-chat-window').classList.toggle('open');
+        }
+        function openMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.add('show');
+        }
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.remove('show');
+        }
+        function viewMaintenance(id) {
+            window.location.href = `/maintenance/view/${id}`;
+        }
+        function approveMaintenance(id) {
+            if (confirm('Approve this maintenance request?')) {
+                fetch(`/maintenance/approve/${id}`, { method: 'POST' })
+                    .then(res => window.location.reload());
+            }
+        }
+        function completeMaintenance(id) {
+            const resolution = prompt('Enter resolution details:');
+            if (resolution !== null) {
+                fetch(`/maintenance/complete/${id}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'resolution=' + encodeURIComponent(resolution)
+                }).then(res => window.location.reload());
+            }
+        }
+        function deleteMaintenance(id) {
+            if (confirm('Delete this maintenance request?')) {
+                fetch(`/maintenance/delete/${id}`, { method: 'POST' })
+                    .then(res => window.location.reload());
+            }
+        }
+    </script>
+</body>
+</html>

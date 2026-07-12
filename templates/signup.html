@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Sign Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <style>
+        .signup-card {
+            max-width: 520px;
+            padding: 32px 28px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .demo-credentials {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .password-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .signup-card {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Milky Way Background -->
+    <div id="milky-way"></div>
+    
+    <div class="login-container">
+        <div class="login-card signup-card glass">
+            <div class="login-header">
+                <div class="logo">
+                    <span class="logo-icon">🚀</span>
+                    <h1>AssetFlow <span class="highlight">AI</span></h1>
+                </div>
+                <p class="subtitle">Create your account to get started</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form id="signupForm" action="/signup" method="POST">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="fullname">Full Name <span class="required">*</span></label>
+                    <input type="text" id="fullname" name="fullname" required placeholder="Rahul Kumar">
+                    <span class="input-icon">👤</span>
+                </div>
+
+                <!-- Email and Mobile Row -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email Address <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required placeholder="rahul@company.com">
+                        <span class="input-icon">📧</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="mobile">Mobile Number <span class="required">*</span></label>
+                        <input type="tel" id="mobile" name="mobile" required placeholder="+91 98765 43210">
+                        <span class="input-icon">📱</span>
+                    </div>
+                </div>
+
+                <!-- Employee ID and Department Row -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="employee_id">Employee ID <span class="required">*</span></label>
+                        <input type="text" id="employee_id" name="employee_id" required placeholder="EMP001">
+                        <span class="input-icon">🆔</span>
+                        <small class="password-hint">This will be your Login ID</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department <span class="required">*</span></label>
+                        <select id="department" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="IT">IT</option>
+                            <option value="HR">HR</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Operations">Operations</option>
+                            <option value="Sales">Sales</option>
+                            <option value="R&D">R&D</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <span class="input-icon">🏢</span>
+                    </div>
+                </div>
+
+                <!-- Password and Confirm Password Row -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password <span class="required">*</span></label>
+                        <input type="password" id="password" name="password" required placeholder="Min 6 characters">
+                        <span class="input-icon">🔒</span>
+                        <div class="password-strength">
+                            <div class="strength-bar"></div>
+                        </div>
+                        <small class="password-hint">Must be at least 6 characters</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+                        <input type="password" id="confirm_password" name="confirm_password" required placeholder="Re-enter password">
+                        <span class="input-icon">✅</span>
+                        <div id="password-match-hint" class="password-hint"></div>
+                    </div>
+                </div>
+
+                <!-- Terms -->
+                <div class="form-options" style="margin: 12px 0;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" required> 
+                        I agree to the <a href="#" style="color: var(--primary);">Terms & Conditions</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">Create Account 🚀</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Already have an account? <a href="/login">Sign In</a></p>
+            </div>
+
+            <div class="demo-credentials">
+                <p><small>⚠️ After signup, admin will assign your role.</small></p>
+                <p><small>Default role: Employee</small></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Milky Way Background
+        function createStars() {
+            const container = document.getElementById('milky-way');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Password Strength
+        document.getElementById('password').addEventListener('input', function() {
+            const strength = this.value.length;
+            const bar = document.querySelector('.strength-bar');
+            if (strength === 0) {
+                bar.style.width = '0%';
+                bar.style.background = 'transparent';
+            } else if (strength < 6) {
+                bar.style.width = '33%';
+                bar.style.background = '#ff4444';
+            } else if (strength < 10) {
+                bar.style.width = '66%';
+                bar.style.background = '#ffaa44';
+            } else {
+                bar.style.width = '100%';
+                bar.style.background = '#44ff88';
+            }
+            checkPasswordMatch();
+        });
+
+        // Password Match
+        document.getElementById('confirm_password').addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const hint = document.getElementById('password-match-hint');
+            
+            if (confirm.length === 0) {
+                hint.textContent = '';
+                hint.style.color = 'var(--text-muted)';
+                return;
+            }
+            
+            if (password === confirm) {
+                hint.textContent = '✅ Passwords match!';
+                hint.style.color = '#44ff88';
+            } else {
+                hint.textContent = '❌ Passwords do not match';
+                hint.style.color = '#ff4444';
+            }
+        }
+
+        // Mobile number validation
+        document.getElementById('mobile').addEventListener('input', function() {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/[^0-9+ ]/g, '');
+        });
+
+        // Form validation before submit
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            
+            if (password !== confirm) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters!');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

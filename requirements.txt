@@ -1,0 +1,15 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+Flask-Migrate
+Werkzeug
+qrcode
+Pillow
+python-dotenv
+pandas
+numpy
+matplotlib
+seaborn
+reportlab
+openpyxl

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="location.href='/notifications'">🔔<span class="badge">0</span></button>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ user.fullname }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/assets">💻 Assets</a>
+            <a href="/allocation">📋 Allocation</a>
+            <a href="/booking">📅 Bookings</a>
+            <a href="/maintenance">🔧 Maintenance</a>
+            <a href="/reports">📈 Reports</a>
+            <a href="/digital-twin">🌌 Digital Twin</a>
+            <a href="/ai/assistant">🧠 AI Assistant</a>
+            <a href="/settings" class="active">⚙️ Settings</a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <section class="page-header">
+            <div>
+                <h1>⚙️ Settings</h1>
+                <p>Manage your account and preferences</p>
+            </div>
+        </section>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}" style="margin-bottom: 16px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Settings Tabs -->
+        <div class="settings-tabs glass">
+            <button class="tab-btn active" onclick="showTab('profile')">👤 Profile</button>
+            <button class="tab-btn" onclick="showTab('security')">🔒 Security</button>
+            {% if user.is_admin() or user.is_manager() %}
+            <button class="tab-btn" onclick="showTab('organization')">🏢 Organization</button>
+            <button class="tab-btn" onclick="showTab('users')">👥 Users</button>
+            {% endif %}
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="settings-content" id="tab-profile">
+            <div class="settings-card glass">
+                <h3>👤 Profile Information</h3>
+                <form action="/profile/update" method="POST" enctype="multipart/form-data">
+                    <div class="profile-avatar">
+                        <img src="{{ user.avatar or url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                        <label for="avatarUpload" class="btn-secondary" style="cursor: pointer;">Change Photo</label>
+                        <input type="file" id="avatarUpload" name="avatar" accept="image/*" style="display:none">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="fullname" value="{{ user.fullname }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" value="{{ user.email }}" readonly disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Employee ID</label>
+                        <input type="text" value="{{ user.employee_id }}" readonly disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" value="{{ user.department }}" readonly disabled>
+                    </div>
+                    <button type="submit" class="btn-primary">Update Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="settings-content" id="tab-security" style="display:none">
+            <div class="settings-card glass">
+                <h3>🔒 Change Password</h3>
+                <form action="/change-password" method="POST">
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" name="current_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" name="new_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Change Password</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Organization Settings -->
+        <div class="settings-content" id="tab-organization" style="display:none">
+            <div class="settings-card glass">
+                <h3>🏢 Organization Setup</h3>
+                <div class="org-settings">
+                    <div class="org-section">
+                        <h4>Departments</h4>
+                        <div class="org-list">
+                            {% for dept in departments %}
+                            <div class="org-item">
+                                <span>{{ dept.name }}</span>
+                                <span style="color: var(--text-muted); font-size: 12px;">{{ dept.assets|length }} assets</span>
+                                {% if user.is_admin() %}
+                                <button onclick="deleteDepartment({{ dept.id }})">🗑️</button>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div style="color: var(--text-muted); padding: 8px;">No departments</div>
+                            {% endfor %}
+                        </div>
+                        {% if user.is_admin() %}
+                        <form action="/settings/department/add" method="POST" class="org-add-form">
+                            <input type="text" name="name" placeholder="Add new department" required>
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <div class="org-section">
+                        <h4>Asset Categories</h4>
+                        <div class="org-list">
+                            {% for cat in categories %}
+                            <div class="org-item">
+                                <span>{{ cat.icon or '📂' }} {{ cat.name }}</span>
+                                <span style="color: var(--text-muted); font-size: 12px;">{{ cat.assets|length }} assets</span>
+                                {% if user.is_admin() %}
+                                <button onclick="deleteCategory({{ cat.id }})">🗑️</button>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div style="color: var(--text-muted); padding: 8px;">No categories</div>
+                            {% endfor %}
+                        </div>
+                        {% if user.is_admin() %}
+                        <form action="/settings/category/add" method="POST" class="org-add-form">
+                            <input type="text" name="name" placeholder="Add new category" required>
+                            <input type="text" name="icon" placeholder="Icon (emoji)" style="max-width: 60px;">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Settings -->
+        <div class="settings-content" id="tab-users" style="display:none">
+            <div class="settings-card glass">
+                <h3>👥 User Management</h3>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee ID</th>
+                                <th>Department</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>{{ u.fullname }}</td>
+                                <td>{{ u.employee_id or 'N/A' }}</td>
+                                <td>{{ u.department or 'N/A' }}</td>
+                                <td>
+                                    {% if user.is_admin() %}
+                                    <select onchange="updateRole({{ u.id }}, this.value)">
+                                        <option value="Employee" {% if u.role == 'Employee' %}selected{% endif %}>Employee</option>
+                                        <option value="Manager" {% if u.role == 'Manager' %}selected{% endif %}>Manager</option>
+                                        <option value="Admin" {% if u.role == 'Admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                    {% else %}
+                                    {{ u.role }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ 'Active' if u.is_active else 'Inactive' }}">
+                                        {{ 'Active' if u.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user.is_admin() and u.id != user.id %}
+                                    <button onclick="toggleUserStatus({{ u.id }})">
+                                        {{ '🔴' if u.is_active else '🟢' }}
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No users found</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.settings-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabId}`).style.display = 'block';
+            document.querySelector(`.tab-btn[onclick*="${tabId}"]`).classList.add('active');
+        }
+
+        function deleteDepartment(id) {
+            if (confirm('Delete this department?')) {
+                fetch(`/settings/department/delete/${id}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert(data.error || 'Error deleting department');
+                        }
+                    });
+            }
+        }
+
+        function deleteCategory(id) {
+            if (confirm('Delete this category?')) {
+                fetch(`/settings/category/delete/${id}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert(data.error || 'Error deleting category');
+                        }
+                    });
+            }
+        }
+
+        function updateRole(userId, role) {
+            fetch(`/settings/user/role/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: role })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.error || 'Error updating role');
+                    window.location.reload();
+                }
+            });
+        }
+
+        function toggleUserStatus(userId) {
+            fetch(`/settings/user/activate/${userId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                });
+        }
+
+        // Avatar upload trigger
+        document.querySelector('.profile-avatar .btn-secondary').addEventListener('click', function() {
+            document.getElementById('avatarUpload').click();
+        });
+    </script>
+</body>
+</html>
