@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ai.css') }}">
+</head>
+<body>
+    <!-- Milky Way Background -->
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Search assets, employees..." id="globalSearch">
+                <span class="shortcut">⌘K</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="location.href='/notifications'">
+                🔔<span class="badge">{{ notifications_count or 0 }}</span>
+            </button>
+            <button class="nav-btn" onclick="toggleAI()">🤖</button>
+            <div class="user-profile">
+                <img src="{{ user.avatar or url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ user.fullname }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard" class="active">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/assets">
+                <span class="icon">💻</span>
+                <span>Assets</span>
+            </a>
+            <a href="/allocation">
+                <span class="icon">📋</span>
+                <span>Allocation</span>
+            </a>
+            <a href="/booking">
+                <span class="icon">📅</span>
+                <span>Bookings</span>
+            </a>
+            <a href="/maintenance">
+                <span class="icon">🔧</span>
+                <span>Maintenance</span>
+            </a>
+            <a href="/reports">
+                <span class="icon">📈</span>
+                <span>Reports</span>
+            </a>
+            <a href="/digital-twin">
+                <span class="icon">🌌</span>
+                <span>Digital Twin</span>
+            </a>
+            <a href="/ai/assistant">
+                <span class="icon">🧠</span>
+                <span>AI Assistant</span>
+            </a>
+            <a href="/settings">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Welcome Section -->
+        <section class="welcome-section">
+            <div>
+                <h1>Welcome back, {{ user.fullname }}! 👋</h1>
+                <p>Here's what's happening with your assets today.</p>
+            </div>
+            <div class="date-time">
+                <span id="currentDateTime"></span>
+            </div>
+        </section>
+
+        <!-- AI Insights Section -->
+        <section class="ai-insights" id="aiInsights">
+            <!-- Dynamic insights loaded via JS -->
+        </section>
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card glass">
+                <div class="stat-icon">💻</div>
+                <div class="stat-info">
+                    <h3>{{ total_assets }}</h3>
+                    <p>Total Assets</p>
+                </div>
+                <div class="stat-change positive">+12%</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3>{{ available_assets }}</h3>
+                    <p>Available</p>
+                </div>
+                <div class="stat-change positive">+5%</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-icon">📋</div>
+                <div class="stat-info">
+                    <h3>{{ allocated_assets }}</h3>
+                    <p>Allocated</p>
+                </div>
+                <div class="stat-change negative">-3%</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-info">
+                    <h3>{{ maintenance_count }}</h3>
+                    <p>In Maintenance</p>
+                </div>
+                <div class="stat-change warning">{{ maintenance_count }}</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-icon">📅</div>
+                <div class="stat-info">
+                    <h3>{{ upcoming_returns }}</h3>
+                    <p>Upcoming Returns</p>
+                </div>
+                <div class="stat-change">{{ 'Today' if upcoming_returns > 0 else 'None' }}</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3>{{ total_bookings }}</h3>
+                    <p>Total Bookings</p>
+                </div>
+                <div class="stat-change positive">+8%</div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container glass">
+                <h3>Asset Distribution by Department</h3>
+                <canvas id="departmentChart"></canvas>
+            </div>
+            <div class="chart-container glass">
+                <h3>Asset Health Score</h3>
+                <canvas id="healthChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="recent-activity glass">
+            <h3>Recent Activity</h3>
+            <div class="activity-timeline">
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <div class="activity-icon">{{ activity.icon }}</div>
+                    <div class="activity-content">
+                        <p>{{ activity.message }}</p>
+                        <span class="activity-time">{{ activity.time }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="activity-item">
+                    <div class="activity-icon">ℹ️</div>
+                    <div class="activity-content">
+                        <p>No recent activity</p>
+                        <span class="activity-time">Just now</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <!-- AI Assistant Floating Button -->
+    <div class="ai-assistant floating">
+        <button class="ai-toggle" onclick="toggleAIAssistant()">
+            🤖 <span class="pulse"></span>
+        </button>
+        <div class="ai-chat-window glass" id="aiChatWindow">
+            <div class="ai-header">
+                <span>🤖 AssetFlow AI</span>
+                <button onclick="toggleAIAssistant()">✕</button>
+            </div>
+            <div class="ai-messages" id="aiMessages">
+                <div class="ai-message ai">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        Hello! I'm your AssetFlow AI Assistant. Ask me anything about your assets! 🚀
+                    </div>
+                </div>
+            </div>
+            <div class="ai-input">
+                <input type="text" placeholder="Ask anything..." id="aiInput" onkeydown="if(event.key==='Enter') sendAIMessage()">
+                <button onclick="sendAIMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette -->
+    <div class="command-palette" id="commandPalette">
+        <div class="command-overlay" onclick="closeCommandPalette()"></div>
+        <div class="command-window glass">
+            <div class="command-input">
+                <span class="command-icon">🔍</span>
+                <input type="text" placeholder="Search anything..." id="commandSearch" autofocus>
+                <span class="command-shortcut">ESC</span>
+            </div>
+            <div class="command-results" id="commandResults">
+                <!-- Results populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+    <script>
+        // Load AI Insights
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/ai/api/insights')
+                .then(res => res.json())
+                .then(insights => {
+                    const container = document.getElementById('aiInsights');
+                    container.innerHTML = insights.map(insight => `
+                        <div class="insight-card ${insight.type}">
+                            <div class="insight-icon">${insight.icon}</div>
+                            <div class="insight-content">
+                                <h4>${insight.title}</h4>
+                                <p>${insight.message}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(() => {});
+        });
+
+        // Update date/time
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDateTime').textContent = 
+                now.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // Command Palette (Ctrl+K)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('commandPalette').classList.toggle('show');
+                if (document.getElementById('commandPalette').classList.contains('show')) {
+                    setTimeout(() => document.getElementById('commandSearch').focus(), 100);
+                }
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('commandPalette').classList.remove('show');
+            }
+        });
+
+        function closeCommandPalette() {
+            document.getElementById('commandPalette').classList.remove('show');
+        }
+
+        // AI Toggle
+        function toggleAI() {
+            document.getElementById('aiChatWindow').classList.toggle('open');
+        }
+        function toggleAIAssistant() {
+            document.getElementById('aiChatWindow').classList.toggle('open');
+        }
+    </script>
+</body>
+</html>

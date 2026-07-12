@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Notifications</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="markAllRead()">✅ Mark All Read</button>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ session.get('user_name', 'User') }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/assets">💻 Assets</a>
+            <a href="/allocation">📋 Allocation</a>
+            <a href="/booking">📅 Bookings</a>
+            <a href="/maintenance">🔧 Maintenance</a>
+            <a href="/reports">📈 Reports</a>
+            <a href="/digital-twin">🌌 Digital Twin</a>
+            <a href="/ai/assistant">🧠 AI Assistant</a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <section class="page-header">
+            <div>
+                <h1>Notifications</h1>
+                <p>Stay updated with all asset activities</p>
+            </div>
+            <div>
+                <span style="color: var(--text-secondary); margin-right: 12px;">Unread: <strong style="color: white;">{{ unread_count }}</strong></span>
+                <button class="btn-secondary" onclick="markAllRead()">✅ Mark All Read</button>
+            </div>
+        </section>
+
+        <!-- Notification Filters -->
+        <section class="filters-section glass">
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filterNotifications('all')">All</button>
+                <button class="filter-btn" onclick="filterNotifications('unread')">Unread</button>
+                <button class="filter-btn" onclick="filterNotifications('read')">Read</button>
+            </div>
+            <div class="filter-group">
+                <select id="typeFilter" onchange="filterByType()">
+                    <option value="">All Types</option>
+                    <option value="allocation">Allocation</option>
+                    <option value="booking">Booking</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="return">Return</option>
+                    <option value="audit">Audit</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Notification List -->
+        <section class="notification-list">
+            {% for notification in notifications %}
+            <div class="notification-item glass {{ 'unread' if not notification.read else '' }}" 
+                 data-id="{{ notification.id }}"
+                 data-type="{{ notification.type }}" 
+                 data-read="{{ notification.read }}">
+                <div class="notification-icon">{{ notification.icon or '📢' }}</div>
+                <div class="notification-content">
+                    <h4>{{ notification.title }}</h4>
+                    <p>{{ notification.message }}</p>
+                    <span class="notification-time">{{ notification.time_ago() }}</span>
+                </div>
+                <div class="notification-actions">
+                    {% if not notification.read %}
+                    <button onclick="markRead({{ notification.id }})">Mark Read</button>
+                    {% endif %}
+                    <button onclick="deleteNotification({{ notification.id }})">🗑️</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-notifications" style="display: block;">
+                <span>🎉</span>
+                <h3>All caught up!</h3>
+                <p>You have no notifications</p>
+            </div>
+            {% endfor %}
+        </section>
+    </main>
+
+    <script>
+        function markRead(id) {
+            fetch(`/notifications/mark-read/${id}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+                        if (item) {
+                            item.classList.remove('unread');
+                            const btn = item.querySelector('button[onclick*="markRead"]');
+                            if (btn) btn.remove();
+                            // Update unread count
+                            updateUnreadCount();
+                        }
+                    }
+                });
+        }
+
+        function deleteNotification(id) {
+            if (confirm('Delete this notification?')) {
+                fetch(`/notifications/delete/${id}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+                            if (item) {
+                                item.style.opacity = '0';
+                                setTimeout(() => {
+                                    item.remove();
+                                    updateUnreadCount();
+                                    checkEmpty();
+                                }, 300);
+                            }
+                        }
+                    });
+            }
+        }
+
+        function markAllRead() {
+            fetch('/notifications/mark-all-read', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelectorAll('.notification-item.unread').forEach(item => {
+                            item.classList.remove('unread');
+                            const btn = item.querySelector('button[onclick*="markRead"]');
+                            if (btn) btn.remove();
+                        });
+                        updateUnreadCount();
+                    }
+                });
+        }
+
+        function filterNotifications(filter) {
+            document.querySelectorAll('.filters-section .filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.filters-section .filter-btn').forEach(btn => {
+                if (btn.textContent.trim().toLowerCase() === filter) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.notification-item').forEach(item => {
+                if (filter === 'all') {
+                    item.style.display = 'flex';
+                } else if (filter === 'unread') {
+                    item.style.display = item.classList.contains('unread') ? 'flex' : 'none';
+                } else if (filter === 'read') {
+                    item.style.display = !item.classList.contains('unread') ? 'flex' : 'none';
+                }
+            });
+        }
+
+        function filterByType() {
+            const type = document.getElementById('typeFilter').value;
+            document.querySelectorAll('.notification-item').forEach(item => {
+                if (!type || item.dataset.type === type) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function updateUnreadCount() {
+            const unread = document.querySelectorAll('.notification-item.unread').length;
+            const badge = document.querySelector('.badge');
+            if (badge) badge.textContent = unread;
+            const countDisplay = document.querySelector('.page-header strong');
+            if (countDisplay) countDisplay.textContent = unread;
+        }
+
+        function checkEmpty() {
+            const items = document.querySelectorAll('.notification-item');
+            const noNotifications = document.querySelector('.no-notifications');
+            if (items.length === 0 && noNotifications) {
+                document.querySelector('.notification-list').style.display = 'none';
+                noNotifications.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

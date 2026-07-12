@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetFlow AI - Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .analytics-card {
+            padding: 24px;
+            background: rgba(255,255,255,0.04);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: var(--transition);
+        }
+        .analytics-card:hover {
+            background: rgba(255,255,255,0.06);
+            transform: translateY(-2px);
+        }
+        .analytics-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .analytics-card .card-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .analytics-card .card-header .badge {
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(108,99,255,0.2);
+            color: var(--primary);
+        }
+        .analytics-card canvas {
+            max-height: 200px;
+            width: 100% !important;
+        }
+        .analytics-card .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+        .analytics-card .metric-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .analytics-card .metric-change {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .analytics-card .metric-change.positive { color: var(--success); }
+        .analytics-card .metric-change.negative { color: var(--danger); }
+        .analytics-card .metric-change.neutral { color: var(--warning); }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.04);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255,255,255,0.06);
+            text-align: center;
+        }
+        .kpi-card .kpi-icon { font-size: 28px; margin-bottom: 4px; }
+        .kpi-card .kpi-value { font-size: 24px; font-weight: 700; }
+        .kpi-card .kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        .trend-indicator.up { color: var(--success); background: rgba(0,230,118,0.1); }
+        .trend-indicator.down { color: var(--danger); background: rgba(255,23,68,0.1); }
+        .trend-indicator.flat { color: var(--warning); background: rgba(255,179,0,0.1); }
+        
+        @media (max-width: 992px) {
+            .analytics-grid { grid-template-columns: 1fr; }
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .kpi-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="milky-way"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="nav-left">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h2>AssetFlow <span class="highlight">AI</span></h2>
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Search analytics...">
+                <span class="shortcut">⌘K</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="location.href='/notifications'">🔔<span class="badge">3</span></button>
+            <button class="nav-btn" onclick="location.href='/ai/assistant'">🤖</button>
+            <div class="user-profile">
+                <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Profile">
+                <span>{{ session.get('user_name', 'User') }}</span>
+                <div class="dropdown-menu">
+                    <a href="/profile">👤 Profile</a>
+                    <a href="/settings">⚙️ Settings</a>
+                    <a href="/logout">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar glass">
+        <div class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/assets">💻 Assets</a>
+            <a href="/allocation">📋 Allocation</a>
+            <a href="/booking">📅 Bookings</a>
+            <a href="/maintenance">🔧 Maintenance</a>
+            <a href="/reports">📈 Reports</a>
+            <a href="/analytics" class="active">📊 Analytics</a>
+            <a href="/digital-twin">🌌 Digital Twin</a>
+            <a href="/ai/assistant">🧠 AI Assistant</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <section class="page-header">
+            <div>
+                <h1>📊 Advanced Analytics</h1>
+                <p>Deep insights into your asset ecosystem</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-secondary" onclick="exportReport()">📄 Export Report</button>
+                <button class="btn-secondary" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </section>
+
+        <!-- KPI Row -->
+        <section class="kpi-row">
+            <div class="kpi-card glass">
+                <div class="kpi-icon">📈</div>
+                <div class="kpi-value" id="kpiUtilization">87%</div>
+                <div class="kpi-label">Asset Utilization</div>
+                <span class="trend-indicator up">↑ 5.2%</span>
+            </div>
+            <div class="kpi-card glass">
+                <div class="kpi-icon">⏱️</div>
+                <div class="kpi-value" id="kpiAvgReturn">12d</div>
+                <div class="kpi-label">Avg. Return Time</div>
+                <span class="trend-indicator down">↓ 2.1d</span>
+            </div>
+            <div class="kpi-card glass">
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-value" id="kpiTotalCost">₹4.2M</div>
+                <div class="kpi-label">Total Asset Value</div>
+                <span class="trend-indicator up">↑ ₹320K</span>
+            </div>
+            <div class="kpi-card glass">
+                <div class="kpi-icon">🔄</div>
+                <div class="kpi-value" id="kpiTurnover">3.2</div>
+                <div class="kpi-label">Asset Turnover Ratio</div>
+                <span class="trend-indicator flat">→ 0.0</span>
+            </div>
+        </section>
+
+        <!-- Analytics Grid -->
+        <section class="analytics-grid">
+            <!-- Asset Health Trend -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>💚 Asset Health Trend</h3>
+                    <span class="badge">Last 30 Days</span>
+                </div>
+                <canvas id="healthTrendChart"></canvas>
+            </div>
+
+            <!-- Department Utilization -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>🏢 Department Utilization</h3>
+                    <span class="badge">Current</span>
+                </div>
+                <canvas id="deptUtilChart"></canvas>
+            </div>
+
+            <!-- Booking Patterns -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>📅 Booking Patterns</h3>
+                    <span class="badge">Weekly</span>
+                </div>
+                <canvas id="bookingPatternChart"></canvas>
+            </div>
+
+            <!-- Maintenance Cost -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>🔧 Maintenance Cost Analysis</h3>
+                    <span class="badge">By Category</span>
+                </div>
+                <canvas id="maintenanceCostChart"></canvas>
+            </div>
+
+            <!-- Asset Lifecycle -->
+            <div class="analytics-card glass full-width">
+                <div class="card-header">
+                    <h3>🔄 Asset Lifecycle Analysis</h3>
+                    <span class="badge">All Assets</span>
+                </div>
+                <canvas id="lifecycleChart"></canvas>
+            </div>
+
+            <!-- Top Assets -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>🏆 Most Valuable Assets</h3>
+                    <span class="badge">Top 5</span>
+                </div>
+                <div id="topAssetsList">
+                    <div class="top-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>💻 MacBook Pro</span>
+                        <span style="color: var(--primary);">₹1,20,000</span>
+                    </div>
+                    <div class="top-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>🚗 Toyota Camry</span>
+                        <span style="color: var(--primary);">₹30,00,000</span>
+                    </div>
+                    <div class="top-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>💻 Dell XPS 13</span>
+                        <span style="color: var(--primary);">₹75,000</span>
+                    </div>
+                    <div class="top-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>📱 iPad Pro</span>
+                        <span style="color: var(--primary);">₹45,000</span>
+                    </div>
+                    <div class="top-asset" style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span>📽️ Epson Projector</span>
+                        <span style="color: var(--primary);">₹40,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Idle Assets -->
+            <div class="analytics-card glass">
+                <div class="card-header">
+                    <h3>💤 Idle Assets</h3>
+                    <span class="badge">>30 Days</span>
+                </div>
+                <div id="idleAssetsList">
+                    <div class="idle-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>📄 Scanner - Fujitsu</span>
+                        <span style="color: var(--warning);">45 days</span>
+                    </div>
+                    <div class="idle-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>🪑 Herman Miller Chair</span>
+                        <span style="color: var(--warning);">38 days</span>
+                    </div>
+                    <div class="idle-asset" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <span>📽️ BenQ Projector</span>
+                        <span style="color: var(--warning);">32 days</span>
+                    </div>
+                    <div class="idle-asset" style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span>💻 HP Pavilion</span>
+                        <span style="color: var(--warning);">28 days</span>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                    💡 Consider reallocating idle assets to high-demand departments
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Insights Section -->
+        <section class="recent-activity glass">
+            <h3>🧠 AI-Generated Insights</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 12px;">
+                <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid var(--success);">
+                    <div style="font-size: 12px; color: var(--text-muted);">📈 TREND</div>
+                    <div style="font-weight: 600; margin: 4px 0;">IT Department utilization up 12%</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">Consider purchasing 3 more laptops</div>
+                </div>
+                <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid var(--warning);">
+                    <div style="font-size: 12px; color: var(--text-muted);">⚠️ ALERT</div>
+                    <div style="font-weight: 600; margin: 4px 0;">5 assets overdue for maintenance</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">Schedule maintenance this week</div>
+                </div>
+                <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid var(--primary);">
+                    <div style="font-size: 12px; color: var(--text-muted);">💡 RECOMMENDATION</div>
+                    <div style="font-weight: 600; margin: 4px 0;">Replace 2 aging laptops</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">Budget: ₹1.5L, ROI: 18 months</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- AI Chat Window -->
+    <div class="ai-assistant floating">
+        <button class="ai-toggle" onclick="toggleAIAssistant()">🤖<span class="pulse"></span></button>
+        <div class="ai-chat-window glass" id="aiChatWindow">
+            <div class="ai-header"><span>🤖 AssetFlow AI</span><button onclick="toggleAIAssistant()">✕</button></div>
+            <div class="ai-messages" id="aiMessages">
+                <div class="ai-message ai">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">Ask me about analytics insights! 📊</div>
+                </div>
+            </div>
+            <div class="ai-input">
+                <input type="text" placeholder="Ask about analytics..." id="aiInput">
+                <button onclick="sendAIMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ============================================
+        // All Charts
+        // ============================================
+        
+        // 1. Health Trend Chart
+        function initHealthTrend() {
+            const ctx = document.getElementById('healthTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Average Health Score',
+                        data: [82, 78, 85, 91],
+                        borderColor: '#00E676',
+                        backgroundColor: 'rgba(0,230,118,0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 60, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // 2. Department Utilization
+        function initDeptUtil() {
+            const ctx = document.getElementById('deptUtilChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['IT', 'HR', 'Finance', 'Marketing', 'Operations'],
+                    datasets: [{
+                        data: [45, 20, 30, 25, 15],
+                        backgroundColor: ['#6C63FF', '#00D4FF', '#FF6B6B', '#00E676', '#FFB300'],
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)', usePointStyle: true } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        // 3. Booking Patterns
+        function initBookingPattern() {
+            const ctx = document.getElementById('bookingPatternChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        { label: 'Meeting Rooms', data: [8, 12, 15, 10, 14, 3, 1], backgroundColor: 'rgba(108,99,255,0.7)' },
+                        { label: 'Projectors', data: [4, 6, 8, 5, 7, 2, 0], backgroundColor: 'rgba(0,212,255,0.7)' },
+                        { label: 'Vehicles', data: [2, 3, 4, 3, 5, 1, 0], backgroundColor: 'rgba(0,230,118,0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { color: 'rgba(255,255,255,0.7)' } } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // 4. Maintenance Cost
+        function initMaintenanceCost() {
+            const ctx = document.getElementById('maintenanceCostChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Laptops', 'Desktops', 'Printers', 'Projectors', 'Vehicles'],
+                    datasets: [
+                        { label: 'Maintenance Cost (₹K)', data: [45, 30, 20, 15, 55], backgroundColor: 'rgba(255,107,107,0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // 5. Lifecycle Chart
+        function initLifecycle() {
+            const ctx = document.getElementById('lifecycleChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                    datasets: [
+                        { label: 'Health Score', data: [100, 90, 75, 55, 35], borderColor: '#00E676', tension: 0.4 },
+                        { label: 'Maintenance Cost', data: [5, 8, 15, 25, 40], borderColor: '#FF6B6B', tension: 0.4 },
+                        { label: 'Utilization', data: [60, 80, 85, 70, 45], borderColor: '#00D4FF', tension: 0.4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { color: 'rgba(255,255,255,0.7)' } } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // Helper Functions
+        // ============================================
+        
+        function toggleAIAssistant() {
+            document.getElementById('aiChatWindow').classList.toggle('open');
+        }
+
+        function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            
+            const container = document.getElementById('aiMessages');
+            const div = document.createElement('div');
+            div.className = 'ai-message user';
+            div.innerHTML = `<div class="message-avatar">👤</div><div class="message-content">${msg}</div>`;
+            container.appendChild(div);
+            
+            // Simulate response
+            setTimeout(() => {
+                const resp = document.createElement('div');
+                resp.className = 'ai-message ai';
+                resp.innerHTML = `<div class="message-avatar">🤖</div><div class="message-content">📊 Based on analytics, IT department has the highest utilization at 87%. I recommend allocating 3 more laptops to meet demand.</div>`;
+                container.appendChild(resp);
+                container.scrollTop = container.scrollHeight;
+            }, 1000);
+        }
+
+        function exportReport() {
+            alert('📄 Report exported successfully! Check your downloads folder.');
+        }
+
+        function refreshData() {
+            alert('🔄 Data refreshed successfully!');
+        }
+
+        // ============================================
+        // Initialize All Charts
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            initHealthTrend();
+            initDeptUtil();
+            initBookingPattern();
+            initMaintenanceCost();
+            initLifecycle();
+
+            // Animate KPI values
+            function animateKPI(id, target, suffix = '') {
+                let current = 0;
+                const el = document.getElementById(id);
+                const interval = setInterval(() => {
+                    current += Math.ceil(target / 20);
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(interval);
+                    }
+                    el.textContent = current + suffix;
+                }, 50);
+            }
+            // animateKPI('kpiUtilization', 87, '%');
+        });
+
+        // Command Palette (Ctrl+K)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                alert('🔍 Command Palette: Type to search...');
+            }
+        });
+
+        // Milky Way Stars
+        function createStars() {
+            const container = document.getElementById('milky-way');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                container.appendChild(star);
+            }
+        }
+        createStars();
+    </script>
+</body>
+</html>

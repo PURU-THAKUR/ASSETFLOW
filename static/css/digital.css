@@ -1,0 +1,234 @@
+/* ============================================
+   AssetFlow AI - Digital Twin Styles
+   Premium 3D Visualization
+   ============================================ */
+
+.digital-twin-container {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    height: calc(100vh - 180px);
+    min-height: 500px;
+}
+
+.twin-scene {
+    position: relative;
+    background: rgba(10, 10, 26, 0.8);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+#threejs-container {
+    width: 100%;
+    height: 100%;
+}
+
+.twin-controls {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.twin-controls button {
+    padding: 4px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.twin-controls button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.twin-stats {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.twin-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.twin-stats .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.twin-stats .dot.green { background: var(--success); }
+.twin-stats .dot.blue { background: var(--secondary); }
+.twin-stats .dot.yellow { background: var(--warning); }
+.twin-stats .dot.red { background: var(--danger); }
+
+.twin-panel {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    overflow-y: auto;
+}
+
+.twin-panel h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.twin-asset-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.detail-item .label {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.detail-item .value {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.twin-filters {
+    position: absolute;
+    top: 70px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.twin-filters h5 {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.twin-filters .filter-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.twin-filters .filter-btn {
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.twin-filters .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.twin-filters .filter-btn.active {
+    background: rgba(108, 99, 255, 0.2);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Tooltip */
+.twin-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    pointer-events: none;
+    display: none;
+}
+
+.twin-tooltip.show {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .digital-twin-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 0;
+    }
+    .twin-scene {
+        height: 400px;
+    }
+    .twin-panel {
+        max-height: 300px;
+    }
+    .twin-filters {
+        top: 16px;
+        right: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .twin-scene {
+        height: 300px;
+    }
+    .twin-controls {
+        top: 8px;
+        padding: 4px 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .twin-controls button {
+        font-size: 10px;
+        padding: 2px 10px;
+    }
+    .twin-stats {
+        bottom: 8px;
+        left: 8px;
+        padding: 4px 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .twin-stats .stat-item {
+        font-size: 11px;
+    }
+}
